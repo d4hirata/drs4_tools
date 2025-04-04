@@ -1,11 +1,9 @@
 ########################################################
 #
-#  Makefile for drscl, drscmd, drs_exam, drs_exam_multi
-#  (drsosc を除外)
+#  Makefile for drscl and drscmd (no wxWidgets)
 #
-#  Requires wxWidgets 2.8.9 or newer
-#  Modified by mzks (Nov. 12 2020)
-#  Further modified to disable drsosc and add install
+#  Modified to remove dependency on wxWidgets
+#  and drsosc-related targets
 #
 ########################################################
 
@@ -23,46 +21,24 @@ endif
 CFLAGS        = -g -O2 -Wall -Wuninitialized -fno-strict-aliasing -Iinclude -I/usr/local/include -D$(DOS) -DHAVE_USB -DHAVE_LIBUSB10 -DUSE_DRS_MUTEX
 LIBS          = -lpthread -lutil -lusb-1.0
 
-ifeq ($(OS),Darwin)
-CFLAGS        += -stdlib=libc++
-CFLAGS        += -I/opt/homebrew/include
-endif         
-
-# wxWidgets libs and flags
-WXLIBS        = $(shell wx-config --libs)
-WXFLAGS       = $(shell wx-config --cxxflags)
-
-CPP_OBJ       = DRS.o averager.o ConfigDialog.o DOFrame.o DOScreen.o DRSOsc.o MeasureDialog.o Measurement.o Osci.o InfoDialog.o DisplayDialog.o AboutDialog.o EPThread.o TriggerDialog.o rb.o
-OBJECTS       = musbstd.o mxml.o strlcpy.o
-
 # install path
-PREFIX = /usr/local
+PREFIX = /opt/drs4_tools
 
-# Build only drscl, drscmd, drs_exam, drs_exam_multi
-all: drscl drscmd drs_exam drs_exam_multi
+# Build only drscl and drscmd
+all: drscl drscmd
 
-# Install target
 install: drscl drscmd
 	install -d $(PREFIX)/bin
 	install drscl $(PREFIX)/bin/
 	install drscmd $(PREFIX)/bin/
 
-# Individual targets
 drscl: $(OBJECTS) DRS.o averager.o drscl.o
-	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drscl.o -o drscl $(LIBS) $(WXLIBS)
+	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drscl.o -o drscl $(LIBS)
 
 drscmd: $(OBJECTS) DRS.o averager.o drscmd.o
-	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drscmd.o -o drscmd $(LIBS) $(WXLIBS)
+	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drscmd.o -o drscmd $(LIBS)
 
-drs_exam: $(OBJECTS) DRS.o averager.o drs_exam.o
-	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drs_exam.o -o drs_exam $(LIBS) $(WXLIBS)
-
-drs_exam_multi: $(OBJECTS) DRS.o averager.o drs_exam_multi.o
-	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drs_exam_multi.o -o drs_exam_multi $(LIBS) $(WXLIBS)
-
-# Object rules
-main.o: src/main.cpp include/mxml.h include/DRS.h
-	$(CXX) $(CFLAGS) $(WXFLAGS) -c $<
+OBJECTS = musbstd.o mxml.o strlcpy.o
 
 drscl.o: src/drscl.cpp include/mxml.h include/DRS.h
 	$(CXX) $(CFLAGS) -c $<
@@ -70,18 +46,14 @@ drscl.o: src/drscl.cpp include/mxml.h include/DRS.h
 drscmd.o: src/drscmd.cpp include/mxml.h include/DRS.h
 	$(CXX) $(CFLAGS) -c $<
 
-drs_exam.o: src/drs_exam.cpp include/mxml.h include/DRS.h
-	$(CXX) $(CFLAGS) -c $<
-
-drs_exam_multi.o: src/drs_exam_multi.cpp include/mxml.h include/DRS.h
-	$(CXX) $(CFLAGS) -c $<
-
-$(CPP_OBJ): %.o: src/%.cpp include/%.h include/mxml.h include/DRS.h
-	$(CXX) $(CFLAGS) $(WXFLAGS) -c $<
-
 $(OBJECTS): %.o: src/%.c include/mxml.h include/DRS.h
 	$(CC) $(CFLAGS) -c $<
 
-# Clean target
+averager.o: src/averager.cpp include/averager.h include/DRS.h
+	$(CXX) $(CFLAGS) -c $<
+
+DRS.o: src/DRS.cpp include/DRS.h
+	$(CXX) $(CFLAGS) -c $<
+
 clean:
-	rm -f *.o drscl drsosc drscmd drs_exam drs_exam_multi
+	rm -f *.o drscl drscmd
