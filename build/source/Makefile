@@ -1,10 +1,11 @@
 ########################################################
 #
-#  Makefile for drsosc, drscl and drs_exam 
-#  executables under linux
-#  Requires wxWidgets 2.8.9 or newer
+#  Makefile for drscl, drscmd, drs_exam, drs_exam_multi
+#  (drsosc を除外)
 #
+#  Requires wxWidgets 2.8.9 or newer
 #  Modified by mzks (Nov. 12 2020)
+#  Further modified to disable drsosc and add install
 #
 ########################################################
 
@@ -14,7 +15,7 @@ CC = /usr/bin/gcc
 # check if wxWidgets is installed
 HAVE_WX       = $(shell which wx-config)
 ifeq ($(HAVE_WX),)
-$(error Error: wxWidgets required to compile "drsosc")
+$(error Error: wxWidgets required to compile)
 endif
 
 # check for OS
@@ -40,27 +41,19 @@ WXFLAGS       = $(shell wx-config --cxxflags)
 CPP_OBJ       = DRS.o averager.o ConfigDialog.o DOFrame.o DOScreen.o DRSOsc.o MeasureDialog.o Measurement.o Osci.o InfoDialog.o DisplayDialog.o AboutDialog.o EPThread.o TriggerDialog.o rb.o
 OBJECTS       = musbstd.o mxml.o strlcpy.o
 
+# install path
+PREFIX = /usr/local
 
-ifeq ($(OS),Darwin)
-all: drsosc drscl drscmd drs_exam drs_exam_multi DRSOsc.app
-else
-all: drsosc drscl drscmd drs_exam drs_exam_multi
-endif
+# Build only drscl, drscmd, drs_exam, drs_exam_multi
+all: drscl drscmd drs_exam drs_exam_multi
 
-DRSOsc.app: drsosc
-	-mkdir DRSOsc.app
-	-mkdir DRSOsc.app/Contents
-	-mkdir DRSOsc.app/Contents/MacOS
-	-mkdir DRSOsc.app/Contents/Resources
-	-mkdir DRSOsc.app/Contents/Resources/English.lproj
-	echo 'APPL????' > DRSOsc.app/Contents/PkgInfo
-	cp Info.plist DRSOsc.app/Contents/Info.plist
-	cp DRSOsc.icns DRSOsc.app/Contents/Resources
-	cp drsosc DRSOsc.app/Contents/MacOS/DRSOsc
+# Install target
+install: drscl drscmd
+	install -d $(PREFIX)/bin
+	install drscl $(PREFIX)/bin/
+	install drscmd $(PREFIX)/bin/
 
-drsosc: $(OBJECTS) $(CPP_OBJ) main.o
-	$(CXX) $(CFLAGS) $(OBJECTS) $(CPP_OBJ) main.o -o drsosc $(LIBS) $(WXLIBS)
-
+# Individual targets
 drscl: $(OBJECTS) DRS.o averager.o drscl.o
 	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drscl.o -o drscl $(LIBS) $(WXLIBS)
 
@@ -73,6 +66,7 @@ drs_exam: $(OBJECTS) DRS.o averager.o drs_exam.o
 drs_exam_multi: $(OBJECTS) DRS.o averager.o drs_exam_multi.o
 	$(CXX) $(CFLAGS) $(OBJECTS) DRS.o averager.o drs_exam_multi.o -o drs_exam_multi $(LIBS) $(WXLIBS)
 
+# Object rules
 main.o: src/main.cpp include/mxml.h include/DRS.h
 	$(CXX) $(CFLAGS) $(WXFLAGS) -c $<
 
@@ -94,6 +88,6 @@ $(CPP_OBJ): %.o: src/%.cpp include/%.h include/mxml.h include/DRS.h
 $(OBJECTS): %.o: src/%.c include/mxml.h include/DRS.h
 	$(CC) $(CFLAGS) -c $<
 
+# Clean target
 clean:
-	rm -f *.o drscl drsosc drscmd
-
+	rm -f *.o drscl drsosc drscmd drs_exam drs_exam_multi
