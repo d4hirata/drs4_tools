@@ -12,12 +12,6 @@
 CXX = /usr/bin/g++
 CC = /usr/bin/gcc
 
-# check if wxWidgets is installed
-HAVE_WX       = $(shell which wx-config)
-ifeq ($(HAVE_WX),)
-$(error Error: wxWidgets required to compile)
-endif
-
 # check for OS
 OS            = $(shell uname)
 ifeq ($(OS),Darwin)
